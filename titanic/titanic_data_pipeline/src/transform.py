@@ -44,7 +44,7 @@ def clean_data(df):
 
     #5. Extract Deck from Cabin
     if "Cabin" in df.columns:
-        df["Deck"] = df["Cabin"].str [0]
+        df["Deck"] = df["Cabin"].str[0]
         df["Deck"] = df["Deck"].fillna("Unknown")
         df = df.drop(columns=["Cabin"])
 
