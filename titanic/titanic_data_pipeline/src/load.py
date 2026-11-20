@@ -50,4 +50,3 @@ def load_data_to_postgres(df):
     print("Data loaded successfully to PostgreSQL database.")
 
     engine.dispose()
-   
