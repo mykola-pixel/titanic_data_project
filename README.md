@@ -40,7 +40,6 @@ titanic_data_pipeline/
 │
 ├── .gitignore
 ├── requirements.txt
-├── test_connection.py
 └── README.md
 ```
 
@@ -72,9 +71,7 @@ titanic_data_pipeline/
 
 The cleaned dataset is also saved locally:
 
-```text
-data/processed/titanic_cleaned.csv
-```
+`data/processed/titanic_cleaned.csv`
 
 ## Setup and Installation
 
@@ -88,78 +85,85 @@ cd titanic_data_project/titanic/titanic_data_pipeline
 ### 2. Create a virtual environment
 
 ```bash
-python -m venv venv
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-Activate it:
+For Windows, activate the environment using:
 
-**Windows:**
-```bash
-venv\Scripts\activate
-```
-
-**macOS / Linux:**
-```bash
-source venv/bin/activate
+```powershell
+.\.venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### 4. Configure environment variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the `titanic_data_pipeline/` directory.
+
+Add your PostgreSQL connection settings:
 
 ```env
 DB_USER=your_username
 DB_PASSWORD=your_password
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_NAME=your_database
 ```
 
-Replace the example values with your PostgreSQL credentials.
+Replace the example values with your own PostgreSQL credentials.
+
+**Important:** Do not commit your `.env` file or expose your database credentials. Make sure `.env` is included in `.gitignore`.
+
+### 5. Create the database table
+
+Before running the pipeline, make sure your PostgreSQL database and the `passengers` table have been created.
+
+You can use the SQL script:
+
+`sql/create_tables.sql`
 
 ## Running the Pipeline
 
-Run the following command from the project root:
+Run the following command from the `titanic_data_pipeline/` directory:
 
 ```bash
 python -m src.pipeline
 ```
 
-The pipeline will execute the extraction, transformation, and loading steps.
+The pipeline will:
 
-## Database Schema
+1. Extract the raw Titanic dataset.
+2. Inspect and clean the data.
+3. Save the cleaned dataset as a CSV file.
+4. Load the cleaned data into PostgreSQL.
+5. Display the pipeline execution results.
 
-The project includes an SQL script for creating the `passengers` table:
+## Pipeline Results
 
-```text
-sql/create_tables.sql
-```
+The pipeline successfully processes the Titanic dataset:
 
-The table stores passenger information, including survival status, passenger class, age, fare, embarkation port, deck, and title.
+- **Source dataset:** 891 passenger records.
+- **Cleaned dataset:** 891 passenger records.
+- **Missing values after cleaning:** 0.
+- **Processed data:** saved as a CSV file.
+- **Database loading:** cleaned records loaded into PostgreSQL.
 
-## Project Goals
+## SQL Analysis
 
-This project was created to practice and demonstrate:
+The project includes SQL queries in `sql/analysis.sql` for exploring the cleaned Titanic dataset.
 
-- Building a basic ETL pipeline.
-- Working with CSV datasets using Pandas.
-- Handling missing and duplicate data.
-- Performing data transformations and feature extraction.
-- Connecting Python applications to PostgreSQL.
-- Managing database credentials with environment variables.
-- Organizing Python code into separate modules.
+These queries can be used to analyze passenger survival rates and other dataset characteristics.
 
 ## Future Improvements
 
+Possible improvements for this project:
+
 - Add automated tests for ETL functions.
-- Improve logging and error handling.
-- Add data quality checks.
-- Improve database loading to preserve table constraints.
-- Add SQL queries for data analysis.
-- Add Docker support.
+- Implement structured logging.
+- Add additional data quality validation checks.
+- Add Docker support for easier environment setup.
