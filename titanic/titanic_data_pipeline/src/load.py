@@ -1,28 +1,40 @@
-import os 
+import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, URL
 from dotenv import load_dotenv
 
 
-base_dir = Path(__file__).resolve().parent.parent
-load_dotenv(base_dir / ".env")
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 
 def load_data_to_postgres(df):
     print("\nLoading data to PostgreSQL database...")
 
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")
-    host = os.getenv("DB_HOST")
-    port = os.getenv("DB_PORT")
-    database = os.getenv("DB_NAME")
+    # Get database credentials
+    required_vars = ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_NAME"]
 
-    connection_string = (
-        f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    missing_vars = [
+        var for var in required_vars if not os.getenv(var)
+    ]
+
+    if missing_vars:
+        raise ValueError(
+            f"Missing database environment variables: {missing_vars}"
+        )
+
+    # Create database connection URL
+    connection_url = URL.create(
+        drivername="postgresql+psycopg2",
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        database=os.getenv("DB_NAME"),
     )
 
-    engine = create_engine(connection_string)
-    # Rename columns to match PostgreSQL schema 
+    # Rename columns to match PostgreSQL schema
     df = df.rename(columns={
         "PassengerId": "passenger_id",
         "Survived": "survived",
@@ -38,15 +50,29 @@ def load_data_to_postgres(df):
         "Title": "title",
     })
 
-    df.to_sql(
-        name="passengers",
-        con=engine,
-        if_exists="replace",
-        index=False,
-        method="multi",
-        chunksize=500,
-    )
-    
-    print("Data loaded successfully to PostgreSQL database.")
+    engine = create_engine(connection_url)
 
-    engine.dispose()
+    try:
+        with engine.begin() as connection:
+            # Remove old records but preserve table structure
+            connection.exec_driver_sql(
+                "TRUNCATE TABLE public.passengers"
+            )
+
+            # Insert new records
+            df.to_sql(
+                name="passengers",
+                con=connection,
+                schema="public",
+                if_exists="append",
+                index=False,
+                method="multi",
+                chunksize=500,
+            )
+
+        print(f"Successfully loaded {len(df)} rows into PostgreSQL.")
+
+        return len(df)
+
+    finally:
+        engine.dispose()
